@@ -43,12 +43,24 @@ class Masksembles2D(nn.Module):
         self.masks = torch.nn.Parameter(masks, requires_grad=False).double()
 
     def forward(self, inputs):
+        """
+        ----original code----
         batch = inputs.shape[0]
         x = torch.split(inputs.unsqueeze(1), batch // self.n, dim=0)
         x = torch.cat(x, dim=1).permute([1, 0, 2, 3, 4])
         x = x * self.masks.unsqueeze(1).unsqueeze(-1).unsqueeze(-1)
         x = torch.cat(torch.split(x, 1, dim=0), dim=1)
         return x.squeeze(0).float()
+        """
+
+        #inputs shape [batch_size, slate_size, num_features]
+        inputs = torch.stack(
+            [inputs.T * self.masks[i].unsqueeze(-1).unsqueeze(-1) for i in
+             range(self.n)],
+            dim=0
+        )
+
+        return torch.sum(inputs, dim=0).T.float()
 
 
 class Masksembles1D(nn.Module):
